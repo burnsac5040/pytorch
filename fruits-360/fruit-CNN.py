@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import os
 
 credentials = {"username":"##########",
@@ -12,10 +9,6 @@ os.environ['KAGGLE_USERNAME']=credentials['username']
 os.environ['KAGGLE_KEY']=credentials['key']
 get_ipython().system('kaggle datasets download -d moltean/fruits')
 get_ipython().system('unzip fruits.zip')
-
-
-# In[2]:
-
 
 import torch
 import torchvision
@@ -45,10 +38,6 @@ writer = SummaryWriter()
 
 PATH = 'fruits-360/'
 
-
-# In[3]:
-
-
 os.rename(PATH + 'Training', PATH + 'train')
 os.rename(PATH + 'Test', PATH + 'test')
 
@@ -56,11 +45,7 @@ print('Number of classes:', len(os.listdir(PATH + 'train/')))
 print('Number of training images:', len(glob(os.path.join(PATH, 'train', '*/*.jpg'))))
 print('Number of testing images:', len(glob(os.path.join(PATH, 'test', '*/*.jpg'))))
 
-
 # ## Creating a Dataframe
-
-# In[4]:
-
 
 CLASSES = ['train', 'test']
 BATCH_SIZE = 32
@@ -77,10 +62,6 @@ dataloaders = {x: DataLoader(img_datasets[x], batch_size=BATCH_SIZE, shuffle=Tru
 ds_size = {x: len(img_datasets[x]) for x in CLASSES}
 class_names = img_datasets['train'].classes
 
-
-# In[5]:
-
-
 samples = img_datasets['train'].samples
 
 filepaths = list(zip(*samples))[0]
@@ -93,27 +74,15 @@ df['class'] = df['le_name'].map(idx_class)
 
 df.head()
 
-
-# In[6]:
-
-
 print(df['class'].value_counts().head(10))
 print(26 * '-')
 print('Max number of images in a class: {}'.format(list(df['class'].value_counts().items())[0]))
 print('Min number of images in a class: {}'.format(list(df['class'].value_counts(ascending=True).items())[0]))
 print('The average number of images in a class: {:.0f}'.format(df['class'].value_counts().mean()))
 
-
-# In[7]:
-
-
 df['class'].value_counts().plot.bar(figsize=(20, 10), color='yellow');
 
-
 # ## Information for normalization
-
-# In[8]:
-
 
 mean = 0.
 std = 0.
@@ -130,11 +99,7 @@ std /= ds_size['train']
 print(mean)
 print(std)
 
-
 # ## Transformations
-
-# In[9]:
-
 
 BATCH_SIZE = 32
 NUM_EPOCHS = 20
@@ -183,17 +148,9 @@ base_dataloaders = {x: DataLoader(img_datasets[x], batch_size=BATCH_SIZE, shuffl
 dataloaders = {'train': train_loader, 'valid': val_loader, 'test': base_dataloaders['test']}
 datalens = {'train': len(train_indices), 'valid': len(val_indices), 'test': len(img_datasets['test'])}
 
-
-# In[10]:
-
-
 datalens['train'] + datalens['valid'] == ds_size['train']
 
-
 # ## Viewing a batch of images
-
-# In[11]:
-
 
 imgs, classes = next(iter(dataloaders['train']))
 
@@ -205,10 +162,6 @@ outputs = torch.clamp(outputs, 0, 1)
 plt.imshow(outputs)
 plt.axis('off');
 
-
-# In[12]:
-
-
 def accuracy(output, label):
     _, pred = torch.max(output, dim=1)
     return ((pred == label).sum().item() / len(pred)) * 100
@@ -216,11 +169,7 @@ def accuracy(output, label):
 def num_params(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
 # ## Define the Model
-
-# In[13]:
-
 
 class SecondModel(nn.Module):
     def __init__(self):
@@ -252,14 +201,9 @@ class SecondModel(nn.Module):
 model = SecondModel().to(device)
 summary(model, (3, 100, 100))
 
-
 # ## Figuring out input to first dense layer
 
-# In[14]:
-
-
 images, labels = next(iter(dataloaders['train']))
-# images, labels = iter(dataloaders['train'])
 
 pad = torch.nn.ZeroPad2d((0, 1, 1, 0))
 conv1 = nn.Conv2d(3, 16, 2)
@@ -309,17 +253,9 @@ print(f'After bn4: {x.shape}')
 x = pool(x)
 print(f'After pool4: {x.shape}')
 
-
-# In[15]:
-
-
 print(f'There are {num_params(model)} trainable parameters')
 
-
 # ## Early Stopping Class taken from `pytorchtools`
-
-# In[16]:
-
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
@@ -365,20 +301,12 @@ class EarlyStopping:
         torch.save(model.state_dict(), 'checkpoint.pt')
         self.val_loss_min = val_loss
 
-
 # ## Training the Model
-
-# In[17]:
-
 
 model = SecondModel().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD([p for p in model.parameters() if p.requires_grad], lr=LR)
 lr_scheduler = StepLR(optimizer, step_size=7, gamma=0.1)
-
-
-# In[18]:
-
 
 def train_model(model, criterion, optimizer, scheduler, n_epochs=20):
     writer = SummaryWriter()
@@ -422,7 +350,6 @@ def train_model(model, criterion, optimizer, scheduler, n_epochs=20):
                     _, preds = torch.max(outputs, dim=1)
                     loss = criterion(outputs, labels)
 
-
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
@@ -449,7 +376,6 @@ def train_model(model, criterion, optimizer, scheduler, n_epochs=20):
                 best_acc = epoch_acc
                 best_wts = copy.deepcopy(model.state_dict())
 
-
             if early_stopping.early_stop:
               print('Early stopping')
               break
@@ -466,17 +392,9 @@ def train_model(model, criterion, optimizer, scheduler, n_epochs=20):
     writer.close()
     return model
 
-
-# In[19]:
-
-
 train_model(model, criterion, optimizer, lr_scheduler, n_epochs=10)
 
-
 # ## Evaluation
-
-# In[20]:
-
 
 correct = 0
 total = 0
@@ -491,11 +409,7 @@ with torch.no_grad():
 
 print('The accuracy of the model on {} images: {}'.format(datalens['test'], correct/total * 100))
 
-
 # ### Percentage correct based on class
-
-# In[21]:
-
 
 class_correct = list(0. for i in range(NUM_CLASSES))
 class_total = list(0. for i in range(NUM_CLASSES))
@@ -518,11 +432,7 @@ df['accuracy'] = [100 * class_correct[i] / class_total[i] for i in range(NUM_CLA
 
 df.sort_values(by='accuracy').head(5)
 
-
 # ## Plotting Individual Images and Prediction Confidence
-
-# In[22]:
-
 
 probs = []
 preds_10 = []
@@ -543,10 +453,6 @@ with torch.no_grad():
         images_.append(images)
         labels_.append(labels)
 
-
-# In[23]:
-
-
 cat_probs = torch.cat([torch.stack(batch) for batch in probs])
 cat_preds = np.vstack(preds_10)
 cat_images = torch.cat(images_)
@@ -554,10 +460,6 @@ cat_labels = torch.cat(labels_)
 
 top_probs = [sorted(el.cpu().numpy())[::-1][:10] for el in cat_probs]
 top_preds = [[idx_class.get(el) for el in arr] for arr in cat_preds]
-
-
-# In[35]:
-
 
 def mpl_imshow(image, one_channel=False):
     image = image.numpy().transpose((1, 2, 0))
@@ -582,12 +484,7 @@ def plot_pred(pred_probs, labels, images, n=1, one_channel=False):
     plt.title('{} {:.2f}% {}'.format(pred, prob, true), color=color)
     plt.axis('off');
 
-
 plot_pred(top_probs, cat_labels, cat_images, n=18)
-
-
-# In[25]:
-
 
 def plot_confidence(pred_probs, labels, n=1):
     preds = [idx_class.get(p) for p in cat_preds[n]]
@@ -609,11 +506,7 @@ def plot_confidence(pred_probs, labels, n=1):
 
 plot_confidence(top_probs, cat_labels, n=17)
 
-
 # ## Plotting Bad Predictions
-
-# In[34]:
-
 
 bad_preds = []
 
@@ -622,10 +515,6 @@ for idx, arr in enumerate(top_probs):
         bad_preds.append(idx)
 
 plot_confidence(top_probs, cat_labels, n=bad_preds[1])
-
-
-# In[27]:
-
 
 idx_shift = 5
 n_rows, n_cols = 3, 2
@@ -641,11 +530,7 @@ for idx in range(n_images):
     
     plt.tight_layout(h_pad=1.0);
 
-
 # ## Creating Prediction Probability Dataframe
-
-# In[28]:
-
 
 preds_all = list(list(zip(*cat_preds))[0])
 
@@ -660,19 +545,11 @@ prob_df = prob_df.rename(columns=dict(zip(prob_df.columns.values[2:], class_name
 
 prob_df.head()
 
-
 # #### To verify that the data is in the correct place
-
-# In[29]:
-
 
 prob_df.select_dtypes(exclude=['O']).idxmax(axis=1)
 
-
 # ## ROC Curve
-
-# In[30]:
-
 
 from sklearn.metrics import roc_curve, auc
 from scipy import interp
@@ -696,10 +573,6 @@ y_preds = probs.numpy().T.ravel()
 
 fpr['micro'], tpr['micro'], _ = roc_curve(y_test, y_preds)
 roc_auc['micro'] = auc(fpr['micro'], tpr['micro'])
-
-
-# In[31]:
-
 
 all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
 
@@ -729,10 +602,6 @@ plt.ylim([0.0, 1.02])
 plt.xlabel('FPR')
 plt.ylabel('TPR')
 plt.legend(loc=0);
-
-
-# In[32]:
-
 
 all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
 
