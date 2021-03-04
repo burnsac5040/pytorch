@@ -1,8 +1,8 @@
-## My Exploration of Pytorch
+## PyTorch Project
 
-### [1. CNN](fruits-360) - [Fruits 360 Dataset from Kaggle](https://www.kaggle.com/moltean/fruits)
-This is my first model that I am uploading to Github and was my second attempt on creating a model to classify 131 classes of fruit.  The model is built with Pytorch and may not be the best code there is.
+### [Convolutional Neural Network](fruits-360) - [Fruits 360 Dataset from Kaggle](https://www.kaggle.com/moltean/fruits)
+A model was built using PyTorch to classify images of 131 types of fruit.  This may not be the best code out there, as it was my first attempt at using PyTorch.
 
-I implemented early stopping through a class built with [`pytorchtools`](https://pypi.org/project/pytorchtools/).  The module was not able to be imported so I copied and pasted the early stopping class.
+Early stopping was implemented by taking a class from the `pytorchtools` (`pip install pytorchtools`) module.  I was unable to use the class when importing the module, so it was taken from the source code and put into this project instead.
 
-I made a graph of the model's confidence of predictions as well as plotting the ROC curve.
+Graphs were made of the model's confidence of predictions as well as the ROC curve.  The model's saved state after being trained on the images is also in this repository as a [file](fruits-360/2-model-a2.pt).
